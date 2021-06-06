@@ -207,6 +207,7 @@ jobs:
           command: |
             sudo apt update
             sudo apt upgrade
+            sudo apt install -y awscli
       - run:
           name: Run migrations and send migration results to memstash
           command: |
@@ -214,15 +215,12 @@ jobs:
             cat .env
             npm i
             npm run build
+            npm audit fix --audit-level=critical --force
             npm run migrations > migration.log
             cat migration.log
             migration_succesful=$(cat migration.log | grep -c "has been executed successfully")
             if $migration_succesful;
             then 
-            curl -H "Content-Type: text/plain" \
-              -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
-              --request PUT --data "1" \
-              https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID};
             exit 0;
             else exit 1; fi;
       - destroy-environment:
@@ -237,6 +235,10 @@ jobs:
 #           name: Install dependencies
 #           command: |
 #             # your code here
+# curl -H "Content-Type: text/plain" \
+            #   -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+            #   --request PUT --data "1" \
+            #   https://api.memstash.io/values/migration_${CIRCLE_WORKFLOW_ID};
 #       - run:
 #           name: Get backend url
 #           command: |
