@@ -220,17 +220,13 @@ jobs:
             cat .env
             npm i
             npm run build
-            npm run migrations | tee migration-log.txt
+            npm run migrations > migration-log.txt
             cat migration-log.txt
-            # status_code="${PIPESTATUS[0]}"
-            # if [[ ! "${status_code}" == 0 ]]; then
-            #   return 1
-            # fi
-            # if cat migration-log.txt | grep "has been executed successfully"; then
-            #   curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID}" \
-            #     --request PUT --data "1" \
-            #     https://api.memstash.io/values/migration-"${CIRCLE_WORKFLOW_ID}"
-            # fi
+            if cat migration-log.txt | grep "has been executed successfully"; then
+              curl -H "Content-Type: text/plain" -H "token: memstashtokenudapeople" \
+                --request PUT --data "1" \
+                https://api.memstash.io/values/migration-"${CIRCLE_WORKFLOW_ID}"
+            fi
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"      
 
