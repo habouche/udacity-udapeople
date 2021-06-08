@@ -299,7 +299,7 @@ jobs:
             tar -C backend -czvf backend.tar.gz .
             echo "ls project"
             ls
-            cp -r backend.tar.gz .circleci/ansible/roles/deploy/files
+            cp backend.tar.gz .circleci/ansible/roles/deploy/files
             echo "ls deploy-files"
             ls .circleci/ansible/roles/deploy/files
       - run:
