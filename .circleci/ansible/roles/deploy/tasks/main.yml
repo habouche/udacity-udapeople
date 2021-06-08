@@ -3,7 +3,7 @@
   become: true
   copy:
     src: backend.tar.gz
-    dest: /home/ubuntu/backend
+    dest: /home/ubuntu
 
 - name: prepare binaries
   become: true
