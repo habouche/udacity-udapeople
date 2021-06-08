@@ -1,17 +1,37 @@
 ---
-- name: copy dist backend folder to ec2 server
-  become: yes
+- name: Copy backend dist files web server
+  become: true
   copy:
-    src: backend.tar.gz
+    src: backend
     dest: /home/ubuntu
 
-- name: prepare binaries
-  become: true
+- name: Install Node
   shell: |
-    cd /home/ubuntu
-    tar xvzf backend.tar.gz -C .
-- name: start server
-  become: true
+    cd /home/ubuntu/backend
+    npm install
+- name: Build Node
   shell: |
-    cd /home/ubuntu
+    cd /home/ubuntu/backend
+    npm run build
+- name: Start PM2
+  shell: |
+    cd /home/ubuntu/backend
     pm2 start npm --name backend -- start
+
+# ---
+# - name: copy dist backend folder to ec2 server
+#   become: yes
+#   copy:
+#     src: backend.tar.gz
+#     dest: /home/ubuntu
+
+# - name: prepare binaries
+#   become: true
+#   shell: |
+#     cd /home/ubuntu
+#     tar xvzf backend.tar.gz -C .
+# - name: start server
+#   become: true
+#   shell: |
+#     cd /home/ubuntu
+#     pm2 start npm --name backend -- start
