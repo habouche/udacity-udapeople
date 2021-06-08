@@ -294,6 +294,7 @@ jobs:
             npm install
             npm run build
             tar -czvf backend.tar.gz dist/*
+            ls
             cp -r backend.tar.gz ../.circleci/ansible/roles/deploy/files
             ls ../.circleci/ansible/roles/deploy/files
       - run:
