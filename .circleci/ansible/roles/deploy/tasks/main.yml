@@ -2,14 +2,14 @@
 - name: copy dist backend folder to ec2 server
   become: yes
   copy:
-    src: ./backend/vackend.tar.gz
-    dest: /home/ubuntu/artifact.tar.gz
+    src: backend.tar.gz
+    dest: /home/ubuntu
 
 - name: prepare binaries
   become: true
   shell: |
     cd /home/ubuntu
-    tar xvzf artifact.tar.gz -C .
+    tar xvzf backend.tar.gz -C .
 - name: start server
   become: true
   shell: |
