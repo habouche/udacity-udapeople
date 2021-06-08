@@ -159,7 +159,6 @@ jobs:
             curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
               --request PUT --data "${BACKEND_URL}" \
               https://api.memstash.io/values/backendurl
-            
 
       - persist_to_workspace:
           root: .circleci/ansible
@@ -268,22 +267,35 @@ jobs:
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"     
                     
-#   deploy-backend:
-#     docker:
-#       # Docker image here that supports Ansible
-#     steps:
-#       # Checkout code from git
-#       # Add ssh keys with fingerprint
-#       # attach workspace
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # your code here
-#       - run:
-#           name: Deploy backend
-#           command: |
-#             # your code here
-#       # Here's where you will add some code to rollback on failure  
+  deploy-backend:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ['58:cb:b5:ea:33:23:90:de:96:16:69:8a:d8:00:ef:d9']
+      - attach_workspace:
+          at: .circleci/ansible
+      - run:
+          name: Install dependencies
+          command: |
+            apk update
+            apk add --update ansible aws-cli openssh-client tar
+      - run:
+          name: Prepare Artifacts
+          command: |
+            cd backend
+            npm install
+            npm run build
+            tar -czvf backend.tar.gz dist/*
+            cp -r backend.tar.gz ../.circleci/ansible/roles/deploy/files
+            ls ../.circleci/ansible/roles/deploy/files
+      - run:
+          name: Deploy backend
+          command: |
+            ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/deploy-backend.yml
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
 
 #   smoke-test:
 #     docker:
