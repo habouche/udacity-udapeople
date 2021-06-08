@@ -293,8 +293,6 @@ jobs:
             cd backend
             npm install
             npm run build
-            
-            
       - run:
           name: Transfer compressed dist folder
           command: |
