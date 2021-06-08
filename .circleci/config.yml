@@ -129,7 +129,6 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-      - run: yum -y install tar gzip
       - run:
           name: Ensure back-end infrastructure exists
           command: |
@@ -279,8 +278,13 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk update
-            apk add --update ansible aws-cli openssh-client tar
+            apk add --update ansible
+            apk add tar gzip
+            apk add curl
+            apk add gzip
+            apk add nodejs
+            apk add npm
+            pip3 install awscli
       - run:
           name: Prepare Artifacts
           command: |
