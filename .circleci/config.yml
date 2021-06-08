@@ -11,8 +11,8 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            if aws s3 ls | grep udapeople-<<parameters.workflow_id>>; then
-              aws s3 rm s3://udapeople-<<parameters.workflow_id>> --recursive
+            if aws s3 ls | grep udapeople-<<parameters.workflow_id:0:7>>; then
+              aws s3 rm s3://udapeople-<<parameters.workflow_id:0:7>> --recursive
             fi
             aws cloudformation delete-stack --stack-name udapeople-backend-<<parameters.workflow_id>>
             aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.workflow_id>>
@@ -293,10 +293,13 @@ jobs:
             cd backend
             npm install
             npm run build
-            tar -czvf backend.tar.gz dist/*
-            ls
-            cp -r backend.tar.gz ../.circleci/ansible/roles/deploy/files
-            ls ../.circleci/ansible/roles/deploy/files
+            tar -czvf backend.tar.gz dist
+            
+      - run:
+          name: Transfer compressed dist folder
+          command: |
+            cp -r backend/backend.tar.gz .circleci/ansible/roles/deploy/files
+            ls .circleci/ansible/roles/deploy/files
       - run:
           name: Deploy backend
           command: |
