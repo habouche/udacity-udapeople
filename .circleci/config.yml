@@ -285,7 +285,6 @@ jobs:
             apk add gzip
             apk add nodejs
             apk add npm
-            apk add openssh-client
             pip install awscli
       - run:
           name: Prepare Artifacts
