@@ -20,20 +20,19 @@ commands:
   # revert-migrations:
   #   description: Revert the last migration if successfully run in the current workflow.
   #   parameters:
-  #     # Add parameter here     
+  #     workflow_id:
+  #         type: string     
   #   steps:
   #     - run:
   #         name: Revert migrations
-  #         # Add when this will run
+  #         when: on_fail
   #         command: |
-  #           # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-  #           SUCCESS = 1
+  #           SUCCESS curl -H "token: <<parameters.workflow_id>>" --request GET https://api.memstash.io/values/migration-<<parameters.workflow_id>>
   #           if(( $SUCCESS==1 )); 
   #           then
-  #           #  cd ~/project/backend
-  #           #  npm install
-  #           #  Add revert code here. You can find this in the Getting Started section.
-  #             exit 1
+  #            cd ~/project/backend
+  #            npm install
+  #            npm run migrations:revert
   #           fi
             
 jobs:
@@ -286,11 +285,11 @@ jobs:
             apk add gzip
             apk add nodejs
             apk add npm
+            apk add openssh-client
             pip install awscli
       - run:
           name: Prepare Artifacts
           command: |
-            mkdir .circleci/ansible/roles/deploy/files
             cd backend
             npm install
             npm run build
@@ -302,9 +301,9 @@ jobs:
             cd backend
             echo "ls project"
             ls
-            cp backend.tar.gz .circleci/ansible/roles/deploy/files
+            cp -r backend.tar.gz /root/project/.circleci/ansible/roles/deploy/files
             echo "ls deploy-files"
-            cd .circleci/ansible/roles/deploy/files
+            cd /root/project/.circleci/ansible/roles/deploy/files
             ls 
       - run:
           name: Deploy backend
