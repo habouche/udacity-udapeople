@@ -2,7 +2,7 @@
 - name: copy dist backend folder to ec2 server
   become: true
   copy:
-    src: backend.tar.gz
+    src: root/project/backend/backend.tar.gz
     dest: /home/ubuntu
 
 - name: prepare binaries
