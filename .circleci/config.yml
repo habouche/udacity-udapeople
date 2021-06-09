@@ -294,17 +294,7 @@ jobs:
             npm install
             npm run build
             tar -C dist -czvf backend.tar.gz .
-
-      - run:
-          name: Transfer compressed dist folder
-          command: |
-            cd backend
-            echo "ls project"
-            ls
             cp -r backend.tar.gz /root/project/.circleci/ansible/roles/deploy/files
-            echo "ls deploy-files"
-            cd /root/project/.circleci/ansible/roles/deploy/files
-            ls 
       - run:
           name: Deploy backend
           command: |
