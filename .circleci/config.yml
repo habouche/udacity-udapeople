@@ -336,7 +336,11 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update curl
-            apk add tar gzip
+            apk add tar
+            apk add gzip
+            apk add nodejs
+            apk add npm
+            pip install awscli
             
       - run:
           name: Get backend url
@@ -348,10 +352,13 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
-            if curl --fail "https://${API_URL}/api/status"; then
+            echo "${API_URL}"
+            ENDPOINT="https://${API_URL}/api/status/"
+            if curl -s ${ENDPOINT} | grep "ok"
+            then
               echo "Backend Smoke Test Successful"
             else
-              echo "Backend Smoke Tes Failed"
+              echo "Backend Smoke Test Failed"
               exit 1
             fi
             
@@ -361,13 +368,13 @@ jobs:
             URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-west-2.amazonaws.com/"
             echo ${URL}
             if curl -s ${URL} | grep "Welcome"
-              then
-                echo "Frontend Smoke Test Successfull"
-                exit 1
-              else
-                echo "Frontend Smoke Test Failed"
-                exit 1
-              fi
+            then
+              echo "Frontend Smoke Test Successfull"
+              exit 1
+            else
+              echo "Frontend Smoke Test Failed"
+              exit 1
+            fi
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert-migrations:
