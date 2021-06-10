@@ -27,16 +27,15 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            cd backend
-            npm install
-            npm run migrations:revert
-            # SUCCESS=$(curl -H "token: <<parameters.workflow_id>>" --request GET https://api.memstash.io/values/migration-<<parameters.workflow_id>>)
-            # if(( $SUCCESS==1 )); 
-            # then
-            #  cd backend
-            #  npm install
-            #  npm run migrations:revert
-            # fi
+            SUCCESS=$(curl -H "token: <<parameters.workflow_id>>" --request GET https://api.memstash.io/values/migration-<<parameters.workflow_id>>)
+            if(( $SUCCESS==1 )); 
+            then
+             cd backend
+             npm install
+             npm run migrations:revert
+            else
+             echo "no migrations to revert" 
+            fi
             
 jobs:
   build-frontend:
@@ -348,9 +347,13 @@ jobs:
             export BACKEND_IP=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
               --request GET https://api.memstash.io/values/backendurl)
             export API_URL="http://${BACKEND_IP}:3030"
-            echo "${API_URL}"
-            export ENDPOINT=$("https://${API_URL}/api/status")
-            echo "${ENDPOINT}"
+            echo $(API_URL)
+                     
+      - run:
+          name: Backend smoke test.
+          command: |
+            export ENDPOINT="${API_URL}/api/status"
+            echo $(ENDPOINT)
             if curl -s ${ENDPOINT} | grep "ok"
             then
               echo "Backend Smoke Test Successful"
@@ -358,18 +361,6 @@ jobs:
               echo "Backend Smoke Test Failed"
               exit 1
             fi
-      - run:
-          name: Backend smoke test.
-          command: |
-            echo "${API_URL}"
-            ENDPOINT="https://${API_URL}/api/status/"
-            # if curl -s ${ENDPOINT} | grep "ok"
-            # then
-            #   echo "Backend Smoke Test Successful"
-            # else
-            #   echo "Backend Smoke Test Failed"
-            #   exit 1
-            # fi
             
       - run:
           name: Frontend smoke test.
