@@ -17,23 +17,26 @@ commands:
             aws cloudformation delete-stack --stack-name udapeople-backend-<<parameters.workflow_id>>
             aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.workflow_id>>
 
-  # revert-migrations:
-  #   description: Revert the last migration if successfully run in the current workflow.
-  #   parameters:
-  #     workflow_id:
-  #         type: string     
-  #   steps:
-  #     - run:
-  #         name: Revert migrations
-  #         when: on_fail
-  #         command: |
-  #           SUCCESS curl -H "token: <<parameters.workflow_id>>" --request GET https://api.memstash.io/values/migration-<<parameters.workflow_id>>
-  #           if(( $SUCCESS==1 )); 
-  #           then
-  #            cd ~/project/backend
-  #            npm install
-  #            npm run migrations:revert
-  #           fi
+  revert-migrations:
+    description: Revert the last migration if successfully run in the current workflow.
+    parameters:
+      workflow_id:
+          type: string     
+    steps:
+      - run:
+          name: Revert migrations
+          when: on_fail
+          command: |
+            cd backend
+            npm install
+            npm run migrations:revert
+            # SUCCESS= curl -H "token: <<parameters.workflow_id>>" --request GET https://api.memstash.io/values/migration-<<parameters.workflow_id>>
+            # if(( $SUCCESS==1 )); 
+            # then
+            #  backend
+            #  npm install
+            #  npm run migrations:revert
+            # fi
             
 jobs:
   build-frontend:
@@ -234,7 +237,10 @@ jobs:
                 https://api.memstash.io/values/migration-"${CIRCLE_WORKFLOW_ID:0:7}"
             fi
       - destroy-environment:
-          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"      
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"    
+      - revert-migrations:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
+
 
   deploy-frontend:
     docker:
@@ -268,7 +274,9 @@ jobs:
             npm run build
             aws s3 cp dist s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" --recursive
       - destroy-environment:
-          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"     
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"  
+      - revert-migrations:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"   
                     
   deploy-backend:
     docker:
@@ -316,29 +324,52 @@ jobs:
             ansible-playbook -i .circleci/ansible/inventory.txt .circleci/ansible/deploy-backend.yml
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - revert-migrations:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
 
-#   smoke-test:
-#     docker:
-#       # Lightweight Docker image 
-#     steps:
-#       # Checkout code from git
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # your code here
-#       - run:
-#           name: Get backend url
-#           command: |
-#             # your code here
-#       - run:
-#           name: Backend smoke test.
-#           command: |
-#             # your code here
-#       - run:
-#           name: Frontend smoke test.
-#           command: |
-#             # your code here
-#       # Here's where you will add some code to rollback on failure  
+  smoke-test:
+    docker:
+      - image: python:3.7-alpine3.11
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            
+      - run:
+          name: Get backend url
+          command: |
+            export BACKEND_IP=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+              --request GET https://api.memstash.io/values/backendurl)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+      - run:
+          name: Backend smoke test.
+          command: |
+            if curl --fail "https://${API_URL}/api/status"; then
+              echo "Backend Smoke Test Successful"
+            else
+              echo "Backend Smoke Tes Failed"
+              exit 1
+            fi
+            
+      - run:
+          name: Frontend smoke test.
+          command: |
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-west-2.amazonaws.com/"
+            echo ${URL}
+            if curl -s ${URL} | grep "Welcome"
+              then
+                echo "Frontend Smoke Test Successfull"
+                exit 1
+              else
+                echo "Frontend Smoke Test Failed"
+                exit 1
+              fi
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - revert-migrations:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}" 
 
 #   cloudfront-update:
 #     docker:
