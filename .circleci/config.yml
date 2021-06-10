@@ -256,15 +256,14 @@ jobs:
               --request GET https://api.memstash.io/values/backendurl)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
-      - run:
-          name: Deploy frontend objects
-          command: |
             cat \<< EOF > frontend/.env
-            A
             API_URL=${API_URL}
             EOF
-            cd frontend
             cat .env
+      - run:
+          name: Deploy frontend objects
+          command: |            
+            cd frontend            
             npm i
             npm run build
             aws s3 cp dist s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" --recursive
