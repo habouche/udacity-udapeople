@@ -259,8 +259,12 @@ jobs:
       - run:
           name: Deploy frontend objects
           command: |
-            echo "${API_URL}" > frontend/.env
+            cat \<< EOF > frontend/.env
+            A
+            API_URL=${API_URL}
+            EOF
             cd frontend
+            cat .env
             npm i
             npm run build
             aws s3 cp dist s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" --recursive
