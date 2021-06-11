@@ -379,15 +379,23 @@ jobs:
       - run:
           name: Update cloudfront distribution
           command: |
+            export OldWorkflowID=$(aws cloudformation \
+                list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+                --no-paginate --output text)
+
+            echo $OldWorkflowID    
+              
+            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+              --request PUT \
+              --data "${OldWorkflowID}" https://api.memstash.io/values/OldWorkflowID
+
             aws cloudformation deploy \
             --template-file .circleci/files/cloudfront.yml \
             --stack-name cloudfront \
             --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
             --tags project=udapeople
             
-            curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
-            --request PUT \
-            --data "${CIRCLE_WORKFLOW_ID:0:7}" https://api.memstash.io/values/OldWorkflowID
+            
       - destroy-environment:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
       - revert-migrations:
@@ -395,28 +403,33 @@ jobs:
       
 
   cleanup:
-      docker:
-        - image: amazon/aws-cli
-      steps:
-        - checkout
-        - run:
-            name: Get old stack workflow id and Remove old stacks and files
-            command: |
-              # export OldWorkflowID=$(aws cloudformation \
-              #   list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-              #   --no-paginate --output text)
-              # export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-              #   --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
-
-              OldWorkflowID=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
-                --request GET https://api.memstash.io/values/OldWorkflowID)
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Get old stack workflow id and Remove old stacks and files
+          command: |
+            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+              --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
               
-              if [ ! -z $OldWorkflowID ]
-              then
-                aws s3 rm s3://udapeople-"${OldWorkflowID}" --recursive
-                aws cloudformation delete-stack --stack-name udapeople-frontend-"${OldWorkflowID}"
-                aws cloudformation delete-stack --stack-name udapeople-backend-"${OldWorkflowID}"
-              fi
+              
+            OldWorkflowID=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
+              --request GET https://api.memstash.io/values/OldWorkflowID) 
+              
+            if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
+            then
+              aws s3 rm s3://udapeople-"${OldWorkflowID}" --recursive
+              aws cloudformation delete-stack --stack-name udapeople-frontend-"${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name udapeople-backend-"${OldWorkflowID}"
+              echo "stack deleted succesfully"
+            else
+              echo "This is new stack.So there is nothing much to do."
+            fi
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - revert-migrations:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"    
       
             
 
