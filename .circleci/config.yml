@@ -155,10 +155,8 @@ jobs:
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filters "Name=tag:project,Values=udapeople-backend" \
               --output text)
-            echo "${BACKEND_URL}"
             echo "${BACKEND_URL}" >> .circleci/ansible/inventory.txt
-            cat .circleci/ansible/inventory.txt
-            
+
             curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
               --request PUT --data "${BACKEND_URL}" \
               https://api.memstash.io/values/backendurl
@@ -226,11 +224,9 @@ jobs:
           name: Run migrations and send migration results to memstash
           command: |
             cd backend
-            cat .env
             npm i
             npm run build
             npm run migrations > migration-log.txt
-            cat migration-log.txt
             if cat migration-log.txt | grep "has been executed successfully"; then
               curl -H "Content-Type: text/plain" -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
                 --request PUT --data "1" \
@@ -261,7 +257,6 @@ jobs:
             export BACKEND_IP=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
               --request GET https://api.memstash.io/values/backendurl)
             export API_URL="http://${BACKEND_IP}:3030"
-            echo "${API_URL}"
             cat \<< EOF > frontend/.env
             API_URL=${API_URL}
             EOF
@@ -348,9 +343,7 @@ jobs:
             export BACKEND_IP=$(curl -H "token: ${CIRCLE_WORKFLOW_ID:0:7}" \
               --request GET https://api.memstash.io/values/backendurl)
             export API_URL="http://${BACKEND_IP}:3030"
-            echo "${API_URL}"
             export ENDPOINT="${API_URL}/api/status"
-            echo "${ENDPOINT}"
             if curl -s "${ENDPOINT}" | grep "ok"
             then
               echo "Backend Smoke Test Successful"
@@ -362,10 +355,9 @@ jobs:
           name: Frontend smoke test.
           command: |
             URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-west-2.amazonaws.com/"
-            echo ${URL}
             if curl -s ${URL} | grep "Welcome"
             then
-              exit 1
+              exit 0
             else
               exit 1
             fi
@@ -374,20 +366,32 @@ jobs:
       - revert-migrations:
           workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}" 
 
-#   cloudfront-update:
-#     docker:
-#       # Docker image here that supports AWS CLI
-#     steps:
-#       # Checkout code from git
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # your code here
-#       - run:
-#           name: Update cloudfront distribution
-#           command: |
-#             # your code here
-#       # Here's where you will add some code to rollback on failure  
+  cloudfront-update:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            yum -y install tar gzip
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            aws cloudformation deploy \
+            --template-file .circleci/files/cloudfront.yml \
+            --stack-name cloudfront \
+            --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
+            --tags project=udapeople
+            
+            # curl -H "Content-Type: text/plain" -H "token: OldWorkflowID-${CIRCLE_WORKFLOW_ID}" \
+            # --request PUT \
+            # --data "$OldWorkflowID" https://api.memstash.io/values/OldWorkflowID
+      - destroy-environment:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}"
+      - revert-migrations:
+          workflow_id: "${CIRCLE_WORKFLOW_ID:0:7}" 
+      
 
 # cleanup:
 #     docker:
