@@ -27,19 +27,19 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            cd backend
-            npm install
-            npm run migrations:revert
-            # SUCCESS=$(curl -H "token: <<parameters.workflow_id>>" --request GET https://api.memstash.io/values/migration-<<parameters.workflow_id>>)
-            # echo "${SUCCESS}"
-            # if[ "${SUCCESS}" == 1 ]
-            # then 
-            #  cd backend
-            #  npm install
-            #  npm run migrations:revert
-            # else
-            #  echo "no migrations to revert" 
-            # fi
+            # cd backend
+            # npm install
+            # npm run migrations:revert
+            SUCCESS=$(curl -H "token: <<parameters.workflow_id>>" --request GET https://api.memstash.io/values/migration-<<parameters.workflow_id>>)
+            echo "${SUCCESS}"
+            if[ "${SUCCESS}" == 1 ]
+            then 
+             cd backend
+             npm install
+             npm run migrations:revert
+            else
+             echo "no migrations to revert" 
+            fi
             
 jobs:
   build-frontend:
