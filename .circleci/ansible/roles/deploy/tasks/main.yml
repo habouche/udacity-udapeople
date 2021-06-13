@@ -28,23 +28,3 @@
   shell: |
     cd /home/ubuntu/backend
     pm2 start npm --name backend -- start
-
-# ---
-# - name: Copy backend dist files web server
-#   become: true
-#   copy:
-#     src: backend
-#     dest: /home/ubuntu
-
-# - name: Install Node
-#   shell: |
-#     cd /home/ubuntu/backend
-#     npm install
-# - name: Build Node
-#   shell: |
-#     cd /home/ubuntu/backend
-#     npm run build
-# - name: Start PM2
-#   shell: |
-#     cd /home/ubuntu/backend
-#     pm2 start npm --name backend -- start
